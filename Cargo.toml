@@ -6,6 +6,26 @@ description = "A mini-redis learn from tokio."
 repository = "https://github.com/JasonkayZK/mini-redis"
 license-file = "LICENSE"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "mini-redis-cli"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "mini-redis-server"
+path = "src/bin/server.rs"
 
 [dependencies]
+async-stream = "0.3.0"
+atoi = "2.0.0"
+bytes = "1"
+rand = "0.8.5"
+clap = { version = "4.0.29", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+tokio-stream = "0.1"
+thiserror = "1.0.37"
+log = "0.4"
+dotenv = "0.15"
+
+[dev-dependencies]
+# Enable test-utilities in dev mode only. This is mostly for tests.
+tokio = { version = "1", features = ["test-util"] }
