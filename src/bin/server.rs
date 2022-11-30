@@ -8,18 +8,19 @@
 
 use clap::Parser;
 use dotenv::dotenv;
-use log::info;
+use tokio::net::TcpListener;
+use tokio::signal;
 
+use mini_redis::{logger, server};
 use mini_redis::consts::DEFAULT_PORT;
 use mini_redis::error::MiniRedisServerError;
-use mini_redis::logger;
 
 #[derive(Parser, Debug)]
 #[clap(
-    name = "mini-redis-server",
-    version,
-    author,
-    about = "A mini redis server"
+name = "mini-redis-server",
+version,
+author,
+about = "A mini redis server"
 )]
 struct Cli {
     #[clap(long)]
@@ -31,7 +32,10 @@ pub async fn main() -> Result<(), MiniRedisServerError> {
     let cli = init();
     let port = cli.port.unwrap_or(DEFAULT_PORT);
 
-    info!("redis server started at: :{}", port);
+    // Bind a TCP listener
+    let listener = TcpListener::bind(&format!("0.0.0.0:{}", port)).await?;
+
+    server::run(listener, signal::ctrl_c()).await;
 
     Ok(())
 }
