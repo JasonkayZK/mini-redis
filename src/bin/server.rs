@@ -15,7 +15,12 @@ use mini_redis::error::MiniRedisServerError;
 use mini_redis::logger;
 
 #[derive(Parser, Debug)]
-#[clap(name = "mini-redis-server", version, author, about = "A mini redis server")]
+#[clap(
+    name = "mini-redis-server",
+    version,
+    author,
+    about = "A mini redis server"
+)]
 struct Cli {
     #[clap(long)]
     port: Option<u16>,
