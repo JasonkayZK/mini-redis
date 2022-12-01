@@ -1,3 +1,3 @@
 pub mod connect;
-mod frame;
+pub mod frame;
 pub mod parse;
