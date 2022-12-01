@@ -11,16 +11,16 @@ use dotenv::dotenv;
 use tokio::net::TcpListener;
 use tokio::signal;
 
-use mini_redis::{logger, server};
 use mini_redis::consts::DEFAULT_PORT;
 use mini_redis::error::MiniRedisServerError;
+use mini_redis::{logger, server};
 
 #[derive(Parser, Debug)]
 #[clap(
-name = "mini-redis-server",
-version,
-author,
-about = "A mini redis server"
+    name = "mini-redis-server",
+    version,
+    author,
+    about = "A mini redis server"
 )]
 struct Cli {
     #[clap(long)]

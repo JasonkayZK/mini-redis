@@ -8,8 +8,8 @@ use std::future::Future;
 use log::info;
 use tokio::net::TcpListener;
 
-mod listener;
 mod handler;
+mod listener;
 mod shutdown;
 
 /// Run the mini-redis server.
@@ -21,6 +21,9 @@ mod shutdown;
 ///
 /// `tokio::signal::ctrl_c()` can be used as the `shutdown` argument. This will
 /// listen for a SIGINT signal.
-pub async fn run(listener: TcpListener, shutdown: impl Future) {
-    info!("mini-redis server started listen on: {}", listener.local_addr().unwrap());
+pub async fn run(listener: TcpListener, _shutdown: impl Future) {
+    info!(
+        "mini-redis server started listen on: {}",
+        listener.local_addr().unwrap()
+    );
 }

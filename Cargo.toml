@@ -1,7 +1,7 @@
 [package]
 name = "mini-redis"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
 description = "A mini-redis learn from tokio."
 repository = "https://github.com/JasonkayZK/mini-redis"
 license-file = "LICENSE"

@@ -1,5 +1,4 @@
 ///! Core storage implementation for mini-redis
-
 use std::collections::{BTreeMap, HashMap};
 
 use bytes::Bytes;
@@ -43,14 +42,14 @@ pub(crate) struct Store {
 #[derive(Debug)]
 pub(crate) struct Entry {
     /// Uniquely identifies this entry.
-    id: u64,
+    pub(crate) id: u64,
 
     /// Stored data
-    data: Bytes,
+    pub(crate) data: Bytes,
 
     /// Instant at which the entry expires and should be removed from the
     /// database.
-    expires_at: Option<Instant>,
+    pub(crate) expires_at: Option<Instant>,
 }
 
 impl Store {
@@ -68,5 +67,4 @@ impl Store {
     pub(crate) fn next_expiration(&self) -> Option<Instant> {
         self.expirations.keys().next().map(|expire| expire.0)
     }
-
 }
