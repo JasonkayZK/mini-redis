@@ -1,8 +1,13 @@
+use crate::cmd::ping::Ping;
+use crate::cmd::unknown::Unknown;
 use crate::connection::connect::Connection;
 use crate::connection::frame::Frame;
 use crate::error::{MiniRedisConnectionError, MiniRedisParseError};
 use crate::server::shutdown::Shutdown;
 use crate::storage::db::Db;
+
+mod ping;
+mod unknown;
 
 /// Enumeration of supported Redis commands.
 ///
@@ -14,8 +19,8 @@ pub enum Command {
     // Set(Set),
     // Subscribe(Subscribe),
     // Unsubscribe(Unsubscribe),
-    // Ping(Ping),
-    // Unknown(Unknown),
+    Ping(Ping),
+    Unknown(Unknown),
 }
 
 impl Command {
@@ -45,11 +50,31 @@ impl Command {
         dst: &mut Connection,
         shutdown: &mut Shutdown,
     ) -> Result<(), MiniRedisConnectionError> {
-        todo!()
+        use Command::*;
+
+        match self {
+            // Get(cmd) => cmd.apply(db, dst).await,
+            // Publish(cmd) => cmd.apply(db, dst).await,
+            // Set(cmd) => cmd.apply(db, dst).await,
+            // Subscribe(cmd) => cmd.apply(db, dst, shutdown).await,
+            Ping(cmd) => cmd.apply(dst).await,
+            Unknown(cmd) => cmd.apply(dst).await,
+            // `Unsubscribe` cannot be applied. It may only be received from the
+            // context of a `Subscribe` command.
+            // Unsubscribe(_) => Err("`Unsubscribe` is unsupported in this context".into()),
+        }
     }
 
     /// Returns the command name
     pub(crate) fn get_name(&self) -> &str {
-        todo!()
+        match self {
+            // Command::Get(_) => "get",
+            // Command::Publish(_) => "pub",
+            // Command::Set(_) => "set",
+            // Command::Subscribe(_) => "subscribe",
+            // Command::Unsubscribe(_) => "unsubscribe",
+            Command::Ping(_) => "ping",
+            Command::Unknown(cmd) => cmd.get_name(),
+        }
     }
 }
