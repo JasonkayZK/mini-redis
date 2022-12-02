@@ -1,7 +1,7 @@
+use mini_redis::{client, server};
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
-use mini_redis::{client, server};
 
 /// A PING PONG test without message provided.
 /// It should return "PONG".
