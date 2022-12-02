@@ -277,7 +277,7 @@ impl Client {
         channels: &[String],
     ) -> Result<(), MiniRedisConnectionError> {
         // Convert the `Subscribe` command into a frame
-        let frame = Subscribe::new(&channels).into_frame();
+        let frame = Subscribe::new(channels).into_frame();
 
         debug!("subscribe command request: {:?}", frame);
 

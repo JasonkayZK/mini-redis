@@ -52,32 +52,32 @@ pub async fn run(listener: TcpListener, shutdown: impl Future) {
         shutdown_complete_rx,
     };
 
-    /// Concurrently run the server and listen for the `shutdown` signal. The
-    /// server task runs until an error is encountered, so under normal
-    /// circumstances, this `select!` statement runs until the `shutdown` signal
-    /// is received.
-    ///
-    /// `select!` statements are written in the form of:
-    ///
-    /// ```text
-    /// <result of async op> = <async op> => <step to perform with result>
-    /// ```
-    ///
-    /// All `<async op>` statements are executed concurrently. Once the **first**
-    /// op completes, its associated `<step to perform with result>` is
-    /// performed.
-    ///
-    /// The `select!` macro is a foundational building block for writing
-    /// asynchronous Rust. See the API docs for more details:
-    ///
-    /// [select](https://docs.rs/tokio/*/tokio/macro.select.html)
+    // Concurrently run the server and listen for the `shutdown` signal. The
+    // server task runs until an error is encountered, so under normal
+    // circumstances, this `select!` statement runs until the `shutdown` signal
+    // is received.
+    //
+    // `select!` statements are written in the form of:
+    //
+    // ```text
+    // <result of async op> = <async op> => <step to perform with result>
+    // ```
+    //
+    // All `<async op>` statements are executed concurrently. Once the **first**
+    // op completes, its associated `<step to perform with result>` is
+    // performed.
+    //
+    // The `select!` macro is a foundational building block for writing
+    // asynchronous Rust. See the API docs for more details:
+    //
+    // [select](https://docs.rs/tokio/*/tokio/macro.select.html)
     tokio::select! {
         res = server.run() => {
-            /// If an error is received here, accepting connections from the TCP
-            /// listener failed multiple times and the server is giving up.
-            ///
-            /// Errors encountered when handling individual connections do not
-            /// bubble up to this point.
+            // If an error is received here, accepting connections from the TCP
+            // listener failed multiple times and the server is giving up.
+            //
+            // Errors encountered when handling individual connections do not
+            // bubble up to this point.
             if let Err(err) = res {
                 error!("failed to accept: {:?}", err);
             }

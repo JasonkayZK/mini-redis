@@ -45,7 +45,7 @@ impl Ping {
         match parse.next_string() {
             Ok(msg) => Ok(Ping::new(Some(msg))),
             Err(MiniRedisParseError::EndOfStream) => Ok(Ping::default()),
-            Err(e) => Err(e.into()),
+            Err(e) => Err(e),
         }
     }
 

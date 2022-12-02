@@ -87,7 +87,7 @@ async fn main() -> Result<(), MiniRedisClientError> {
             println!("OK");
         }
         Command::Publish { channel, message } => {
-            client.publish(&channel, message.into()).await?;
+            client.publish(&channel, message).await?;
             println!("Publish OK");
         }
         Command::Subscribe { channels } => {
