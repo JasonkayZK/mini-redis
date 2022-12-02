@@ -3,7 +3,6 @@ use crate::connection::frame::Frame;
 use crate::connection::parse::Parse;
 use crate::error::{MiniRedisConnectionError, MiniRedisParseError};
 use bytes::Bytes;
-use std::string::ParseError;
 
 /// Returns PONG if no argument is provided, otherwise
 /// return a copy of the argument as a bulk.
@@ -42,7 +41,7 @@ impl Ping {
     /// ```text
     /// PING [message]
     /// ```
-    pub(crate) fn parse_frames(parse: &mut Parse) -> Result<Ping, MiniRedisConnectionError> {
+    pub(crate) fn parse_frames(parse: &mut Parse) -> Result<Ping, MiniRedisParseError> {
         match parse.next_string() {
             Ok(msg) => Ok(Ping::new(Some(msg))),
             Err(MiniRedisParseError::EndOfStream) => Ok(Ping::default()),

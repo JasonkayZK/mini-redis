@@ -4,20 +4,23 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum MiniRedisServerError {
-    #[error("client disconnected")]
-    Disconnect(#[from] io::Error),
+    #[error(transparent)]
+    IoError(#[from] io::Error),
 
-    #[error("unknown error")]
-    Unknown(String),
+    #[error(transparent)]
+    Connect(#[from] MiniRedisConnectionError),
+
+    #[error(transparent)]
+    Parse(#[from] MiniRedisParseError),
 }
 
 #[derive(Error, Debug)]
 pub enum MiniRedisClientError {
-    #[error("server cannot connected")]
-    Connect(#[from] io::Error),
+    #[error(transparent)]
+    Connect(#[from] MiniRedisConnectionError),
 
-    #[error("unknown error")]
-    Unknown(String),
+    #[error(transparent)]
+    Parse(#[from] MiniRedisParseError),
 }
 
 /// Error encountered while parsing a frame.
@@ -59,4 +62,7 @@ pub enum MiniRedisConnectionError {
 
     #[error(transparent)]
     IoError(#[from] io::Error),
+
+    #[error("command execute error")]
+    CommandExecute(String),
 }

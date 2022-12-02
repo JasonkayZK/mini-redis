@@ -4,7 +4,8 @@ use log::debug;
 use mini_redis::client::cmd::Command;
 
 use mini_redis::consts::DEFAULT_PORT;
-use mini_redis::logger;
+use mini_redis::error::MiniRedisClientError;
+use mini_redis::{client, logger};
 
 #[derive(Parser, Debug)]
 #[clap(
@@ -24,14 +25,88 @@ struct Cli {
     port: u16,
 }
 
-fn main() {
+/// Entry point for CLI tool.
+///
+/// The `[tokio::main]` annotation signals that the Tokio runtime should be
+/// started when the function is called. The body of the function is executed
+/// within the newly spawned runtime.
+///
+/// `flavor = "current_thread"` is used here to avoid spawning background
+/// threads. The CLI tool use case benefits more by being lighter instead of
+/// multi-threaded.
+#[tokio::main(flavor = "current_thread")]
+async fn main() -> Result<(), MiniRedisClientError> {
     dotenv().ok();
     logger::init();
-    debug!("get cli: ");
 
     // Parse command line arguments
     let cli = Cli::parse();
+    debug!("get cli: {:?}", cli);
 
     // Get the remote address to connect to
     let addr = format!("{}:{}", cli.host, cli.port);
+
+    // Establish a connection
+    let mut client = client::connect(&addr).await?;
+
+    // Process the requested command
+    match cli.command {
+        Command::Ping { msg } => {
+            let value = client.ping(msg).await?;
+            if let Ok(string) = std::str::from_utf8(&value) {
+                println!("\"{}\"", string);
+            } else {
+                println!("{:?}", value);
+            }
+        }
+        Command::Get { key } => {
+            if let Some(value) = client.get(&key).await? {
+                if let Ok(string) = str::from_utf8(&value) {
+                    println!("\"{}\"", string);
+                } else {
+                    println!("{:?}", value);
+                }
+            } else {
+                println!("(nil)");
+            }
+        }
+        Command::Set {
+            key,
+            value,
+            expires: None,
+        } => {
+            client.set(&key, value).await?;
+            println!("OK");
+        }
+        Command::Set {
+            key,
+            value,
+            expires: Some(expires),
+        } => {
+            client.set_expires(&key, value, expires).await?;
+            println!("OK");
+        }
+        Command::Publish { channel, message } => {
+            // todo
+            // client.publish(&channel, message.into()).await?;
+            // println!("Publish OK");
+        }
+        Command::Subscribe { channels } => {
+            // todo
+            // if channels.is_empty() {
+            //     return Err("channel(s) must be provided".into());
+            // }
+            // let mut subscriber = client.subscribe(channels).await?;
+            //
+            // // await messages on channels
+            // while let Some(msg) = subscriber.next_message().await? {
+            //     println!(
+            //         "got message from the channel: {}; message = {:?}",
+            //         msg.channel, msg.content
+            //     );
+            // }
+        }
+    }
+
+    Ok(())
 }
