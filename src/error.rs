@@ -65,4 +65,10 @@ pub enum MiniRedisConnectionError {
 
     #[error("command execute error")]
     CommandExecute(String),
+
+    #[error("received next message failed, invalid frame type")]
+    InvalidFrameType,
+
+    #[error("invalid argument")]
+    InvalidArgument(String),
 }

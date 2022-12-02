@@ -1,7 +1,10 @@
 use crate::cmd::get::Get;
 use crate::cmd::ping::Ping;
+use crate::cmd::publish::Publish;
 use crate::cmd::set::Set;
+use crate::cmd::subscribe::Subscribe;
 use crate::cmd::unknown::Unknown;
+use crate::cmd::unsubscribe::Unsubscribe;
 use crate::connection::connect::Connection;
 use crate::connection::frame::Frame;
 use crate::connection::parse::Parse;
@@ -15,6 +18,7 @@ pub(crate) mod publish;
 pub(crate) mod set;
 pub(crate) mod subscribe;
 pub(crate) mod unknown;
+pub(crate) mod unsubscribe;
 
 /// Enumeration of supported Redis commands.
 ///
@@ -23,9 +27,9 @@ pub(crate) mod unknown;
 pub enum Command {
     Get(Get),
     Set(Set),
-    // Publish(Publish),
-    // Subscribe(Subscribe),
-    // Unsubscribe(Unsubscribe),
+    Publish(Publish),
+    Subscribe(Subscribe),
+    Unsubscribe(Unsubscribe),
     Ping(Ping),
     Unknown(Unknown),
 }
@@ -57,9 +61,9 @@ impl Command {
         let command = match &command_name[..] {
             "get" => Command::Get(Get::parse_frames(&mut parse)?),
             "set" => Command::Set(Set::parse_frames(&mut parse)?),
-            // "publish" => Command::Publish(Publish::parse_frames(&mut parse)?),
-            // "subscribe" => Command::Subscribe(Subscribe::parse_frames(&mut parse)?),
-            // "unsubscribe" => Command::Unsubscribe(Unsubscribe::parse_frames(&mut parse)?),
+            "publish" => Command::Publish(Publish::parse_frames(&mut parse)?),
+            "subscribe" => Command::Subscribe(Subscribe::parse_frames(&mut parse)?),
+            "unsubscribe" => Command::Unsubscribe(Unsubscribe::parse_frames(&mut parse)?),
             "ping" => Command::Ping(Ping::parse_frames(&mut parse)?),
             _ => {
                 // The command is not recognized and an Unknown command is
@@ -101,11 +105,13 @@ impl Command {
             Ping(cmd) => cmd.apply(dst).await,
             Get(cmd) => cmd.apply(db, dst).await,
             Set(cmd) => cmd.apply(db, dst).await,
-            // Publish(cmd) => cmd.apply(db, dst).await,
-            // Subscribe(cmd) => cmd.apply(db, dst, shutdown).await,
+            Publish(cmd) => cmd.apply(db, dst).await,
+            Subscribe(cmd) => cmd.apply(db, dst, shutdown).await,
             // `Unsubscribe` cannot be applied. It may only be received from the
             // context of a `Subscribe` command.
-            // Unsubscribe(_) => Err("`Unsubscribe` is unsupported in this context".into()),
+            Unsubscribe(_) => Err(MiniRedisConnectionError::CommandExecute(
+                "`Unsubscribe` is unsupported in this context".into(),
+            )),
             Unknown(cmd) => cmd.apply(dst).await,
         }
     }
@@ -115,9 +121,9 @@ impl Command {
         match self {
             Command::Get(_) => "get",
             Command::Set(_) => "set",
-            // Command::Publish(_) => "pub",
-            // Command::Subscribe(_) => "subscribe",
-            // Command::Unsubscribe(_) => "unsubscribe",
+            Command::Publish(_) => "pub",
+            Command::Subscribe(_) => "subscribe",
+            Command::Unsubscribe(_) => "unsubscribe",
             Command::Ping(_) => "ping",
             Command::Unknown(cmd) => cmd.get_name(),
         }

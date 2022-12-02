@@ -61,7 +61,7 @@ async fn main() -> Result<(), MiniRedisClientError> {
         }
         Command::Get { key } => {
             if let Some(value) = client.get(&key).await? {
-                if let Ok(string) = str::from_utf8(&value) {
+                if let Ok(string) = std::str::from_utf8(&value) {
                     println!("\"{}\"", string);
                 } else {
                     println!("{:?}", value);

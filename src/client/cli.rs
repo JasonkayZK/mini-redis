@@ -2,13 +2,16 @@
 //!
 //! Provides an async connect and methods for issuing the supported commands.
 
+use crate::client::subscriber::Subscriber;
 use crate::cmd::get::Get;
 use bytes::Bytes;
-use log::debug;
+use log::{debug, error};
 use std::time::Duration;
 
 use crate::cmd::ping::Ping;
+use crate::cmd::publish::Publish;
 use crate::cmd::set::Set;
+use crate::cmd::subscribe::Subscribe;
 use crate::connection::connect::Connection;
 use crate::connection::frame::Frame;
 use crate::error::MiniRedisConnectionError;
@@ -206,10 +209,128 @@ impl Client {
         }
     }
 
+    /// Posts `message` to the given `channel`.
+    ///
+    /// Returns the number of subscribers currently listening on the channel.
+    /// There is no guarantee that these subscribers receive the message as they
+    /// may disconnect at any time.
+    ///
+    /// # Examples
+    ///
+    /// Demonstrates basic usage.
+    ///
+    /// ```no_run
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let mut client = mini_redis::client::connect("localhost:6379").await.unwrap();
+    ///
+    ///     let val = client.publish("foo", "bar".into()).await.unwrap();
+    ///     println!("Got = {:?}", val);
+    /// }
+    /// ```
+    pub async fn publish(
+        &mut self,
+        channel: &str,
+        message: Bytes,
+    ) -> Result<u64, MiniRedisConnectionError> {
+        // Convert the `Publish` command into a frame
+        let frame = Publish::new(channel, message).into_frame();
+
+        debug!("publish command request: {:?}", frame);
+
+        // Write the frame to the socket
+        self.connection.write_frame(&frame).await?;
+
+        // Read the response
+        match self.read_response().await? {
+            Frame::Integer(response) => Ok(response),
+            frame => Err(MiniRedisConnectionError::CommandExecute(frame.to_string())),
+        }
+    }
+
+    /// Subscribes the client to the specified channels.
+    ///
+    /// Once a client issues a subscribe command, it may no longer issue any
+    /// non-pub/sub commands. The function consumes `self` and returns a `Subscriber`.
+    ///
+    /// The `Subscriber` value is used to receive messages as well as manage the
+    /// list of channels the client is subscribed to.
+    pub async fn subscribe(
+        mut self,
+        channels: Vec<String>,
+    ) -> Result<Subscriber, MiniRedisConnectionError> {
+        // Issue the subscribe command to the server and wait for confirmation.
+        // The client will then have been transitioned into the "subscriber"
+        // state and may only issue pub/sub commands from that point on.
+        self.subscribe_cmd(&channels).await?;
+
+        // Return the `Subscriber` type
+        Ok(Subscriber {
+            client: self,
+            subscribed_channels: channels,
+        })
+    }
+
+    /// The core `SUBSCRIBE` logic, used by misc subscribe fns
+    pub(crate) async fn subscribe_cmd(
+        &mut self,
+        channels: &[String],
+    ) -> Result<(), MiniRedisConnectionError> {
+        // Convert the `Subscribe` command into a frame
+        let frame = Subscribe::new(&channels).into_frame();
+
+        debug!("subscribe command request: {:?}", frame);
+
+        // Write the frame to the socket
+        self.connection.write_frame(&frame).await?;
+
+        // For each channel being subscribed to, the server responds with a
+        // message confirming subscription to that channel.
+        for channel in channels {
+            // Read the response
+            let response = self.read_response().await?;
+
+            // Verify it is confirmation of subscription.
+            match response {
+                Frame::Array(ref frame) => match frame.as_slice() {
+                    // The server responds with an array frame in the form of:
+                    //
+                    // ```
+                    // [ "subscribe", channel, num-subscribed ]
+                    // ```
+                    //
+                    // where channel is the name of the channel and
+                    // num-subscribed is the number of channels that the client
+                    // is currently subscribed to.
+                    [subscribe, schannel, ..]
+                        if *subscribe == "subscribe" && *schannel == channel =>
+                    {
+                        debug!("subscribe channel: {} success", channel);
+                    }
+                    _ => {
+                        error!("subscribe frame failed, response: {}", response);
+                        return Err(MiniRedisConnectionError::CommandExecute(
+                            response.to_string(),
+                        ));
+                    }
+                },
+                frame => {
+                    error!(
+                        "subscribe frame failed, response frame type not match: {}",
+                        frame
+                    );
+                    return Err(MiniRedisConnectionError::InvalidFrameType);
+                }
+            };
+        }
+
+        Ok(())
+    }
+
     /// Reads a response frame from the socket.
     ///
     /// If an `Error` frame is received, it is converted to `Err`.
-    async fn read_response(&mut self) -> Result<Frame, MiniRedisConnectionError> {
+    pub(crate) async fn read_response(&mut self) -> Result<Frame, MiniRedisConnectionError> {
         let response = self.connection.read_frame().await?;
 
         debug!("read response: {:?}", response);
