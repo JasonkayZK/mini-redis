@@ -1,18 +1,18 @@
 use clap::Parser;
 use dotenv::dotenv;
 use log::debug;
-use mini_redis::client::cmd::Command;
 
-use mini_redis::consts::DEFAULT_PORT;
-use mini_redis::error::MiniRedisClientError;
 use mini_redis::{client, logger};
+use mini_redis::client::cmd::Command;
+use mini_redis::consts::DEFAULT_PORT;
+use mini_redis::error::{MiniRedisClientError, MiniRedisConnectionError};
 
 #[derive(Parser, Debug)]
 #[clap(
-    name = "mini-redis-cli",
-    version,
-    author,
-    about = "Issue Redis commands"
+name = "mini-redis-cli",
+version,
+author,
+about = "Issue Redis commands"
 )]
 struct Cli {
     #[clap(subcommand)]
@@ -87,24 +87,22 @@ async fn main() -> Result<(), MiniRedisClientError> {
             println!("OK");
         }
         Command::Publish { channel, message } => {
-            // todo
-            // client.publish(&channel, message.into()).await?;
-            // println!("Publish OK");
+            client.publish(&channel, message.into()).await?;
+            println!("Publish OK");
         }
         Command::Subscribe { channels } => {
-            // todo
-            // if channels.is_empty() {
-            //     return Err("channel(s) must be provided".into());
-            // }
-            // let mut subscriber = client.subscribe(channels).await?;
-            //
-            // // await messages on channels
-            // while let Some(msg) = subscriber.next_message().await? {
-            //     println!(
-            //         "got message from the channel: {}; message = {:?}",
-            //         msg.channel, msg.content
-            //     );
-            // }
+            if channels.is_empty() {
+                return Err(MiniRedisConnectionError::InvalidArgument("channel(s) must be provided".into()).into());
+            }
+            let mut subscriber = client.subscribe(channels).await?;
+
+            // await messages on channels
+            while let Some(msg) = subscriber.next_message().await? {
+                println!(
+                    "got message from the channel: {}; message = {:?}",
+                    msg.channel, msg.content
+                );
+            }
         }
     }
 
