@@ -98,7 +98,7 @@ impl Subscriber {
         &mut self,
         channels: &[String],
     ) -> Result<(), MiniRedisConnectionError> {
-        let frame = Unsubscribe::new(channels).into_frame();
+        let frame = Unsubscribe::new(channels).into_frame()?;
 
         debug!("unsubscribe command: {:?}", frame);
 

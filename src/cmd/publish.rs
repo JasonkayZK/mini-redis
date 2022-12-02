@@ -100,12 +100,12 @@ impl Publish {
     ///
     /// This is called by the client when encoding a `Publish` command to send
     /// to the server.
-    pub(crate) fn into_frame(self) -> Frame {
+    pub(crate) fn into_frame(self) -> Result<Frame, MiniRedisParseError> {
         let mut frame = Frame::array();
-        frame.push_bulk(Bytes::from("publish".as_bytes()));
-        frame.push_bulk(Bytes::from(self.channel.into_bytes()));
-        frame.push_bulk(self.message);
+        frame.push_bulk(Bytes::from("publish".as_bytes()))?;
+        frame.push_bulk(Bytes::from(self.channel.into_bytes()))?;
+        frame.push_bulk(self.message)?;
 
-        frame
+        Ok(frame)
     }
 }

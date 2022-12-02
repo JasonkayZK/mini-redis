@@ -2,17 +2,17 @@ use clap::Parser;
 use dotenv::dotenv;
 use log::debug;
 
-use mini_redis::{client, logger};
 use mini_redis::client::cmd::Command;
 use mini_redis::consts::DEFAULT_PORT;
 use mini_redis::error::{MiniRedisClientError, MiniRedisConnectionError};
+use mini_redis::{client, logger};
 
 #[derive(Parser, Debug)]
 #[clap(
-name = "mini-redis-cli",
-version,
-author,
-about = "Issue Redis commands"
+    name = "mini-redis-cli",
+    version,
+    author,
+    about = "Issue Redis commands"
 )]
 struct Cli {
     #[clap(subcommand)]
@@ -92,7 +92,10 @@ async fn main() -> Result<(), MiniRedisClientError> {
         }
         Command::Subscribe { channels } => {
             if channels.is_empty() {
-                return Err(MiniRedisConnectionError::InvalidArgument("channel(s) must be provided".into()).into());
+                return Err(MiniRedisConnectionError::InvalidArgument(
+                    "channel(s) must be provided".into(),
+                )
+                .into());
             }
             let mut subscriber = client.subscribe(channels).await?;
 

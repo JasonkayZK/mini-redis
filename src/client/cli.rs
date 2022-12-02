@@ -57,7 +57,7 @@ impl Client {
     /// }
     /// ```
     pub async fn ping(&mut self, msg: Option<String>) -> Result<Bytes, MiniRedisConnectionError> {
-        let frame = Ping::new(msg).into_frame();
+        let frame = Ping::new(msg).into_frame()?;
         debug!("request: {:?}", frame);
 
         self.connection.write_frame(&frame).await?;
@@ -88,7 +88,7 @@ impl Client {
     /// ```
     pub async fn get(&mut self, key: &str) -> Result<Option<Bytes>, MiniRedisConnectionError> {
         // Create a `Get` command for the `key` and convert it to a frame.
-        let frame = Get::new(key).into_frame();
+        let frame = Get::new(key).into_frame()?;
 
         debug!("get command request: {:?}", frame);
 
@@ -193,7 +193,7 @@ impl Client {
     /// The core `SET` logic, used by both `set` and `set_expires.
     async fn set_cmd(&mut self, cmd: Set) -> Result<(), MiniRedisConnectionError> {
         // Convert the `Set` command into a frame
-        let frame = cmd.into_frame();
+        let frame = cmd.into_frame()?;
 
         debug!("set command request: {:?}", frame);
 
@@ -234,7 +234,7 @@ impl Client {
         message: Bytes,
     ) -> Result<u64, MiniRedisConnectionError> {
         // Convert the `Publish` command into a frame
-        let frame = Publish::new(channel, message).into_frame();
+        let frame = Publish::new(channel, message).into_frame()?;
 
         debug!("publish command request: {:?}", frame);
 
@@ -277,7 +277,7 @@ impl Client {
         channels: &[String],
     ) -> Result<(), MiniRedisConnectionError> {
         // Convert the `Subscribe` command into a frame
-        let frame = Subscribe::new(channels).into_frame();
+        let frame = Subscribe::new(channels).into_frame()?;
 
         debug!("subscribe command request: {:?}", frame);
 

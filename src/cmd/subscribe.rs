@@ -130,7 +130,7 @@ impl Subscribe {
             select! {
                 // Receive messages from subscribed channels
                 Some((channel_name, msg)) = subscriptions.next() => {
-                    dst.write_frame(&make_message_frame(channel_name, msg)).await?;
+                    dst.write_frame(&make_message_frame(channel_name, msg)?).await?;
                 }
                 res = dst.read_frame() => {
                     let frame = match res? {
@@ -161,13 +161,13 @@ impl Subscribe {
     ///
     /// This is called by the client when encoding a `Subscribe` command to send
     /// to the server.
-    pub(crate) fn into_frame(self) -> Frame {
+    pub(crate) fn into_frame(self) -> Result<Frame, MiniRedisParseError> {
         let mut frame = Frame::array();
-        frame.push_bulk(Bytes::from("subscribe".as_bytes()));
+        frame.push_bulk(Bytes::from("subscribe".as_bytes()))?;
         for channel in self.channels {
-            frame.push_bulk(Bytes::from(channel.into_bytes()));
+            frame.push_bulk(Bytes::from(channel.into_bytes()))?;
         }
-        frame
+        Ok(frame)
     }
 
     async fn subscribe_to_channel(
@@ -201,7 +201,7 @@ impl Subscribe {
         debug!("subscribed to channel success: {}", channel_name);
 
         // Respond with the successful subscription
-        let response = make_subscribe_frame(channel_name, subscriptions.len());
+        let response = make_subscribe_frame(channel_name, subscriptions.len())?;
         dst.write_frame(&response).await?;
 
         Ok(())
@@ -214,22 +214,25 @@ impl Subscribe {
 /// a `&str` since `Bytes::from` can reuse the allocation in the `String`, and
 /// taking a `&str` would require copying the data. This allows the caller to
 /// decide whether to clone the channel name or not.
-fn make_subscribe_frame(channel_name: String, num_subs: usize) -> Frame {
+fn make_subscribe_frame(
+    channel_name: String,
+    num_subs: usize,
+) -> Result<Frame, MiniRedisParseError> {
     let mut response = Frame::array();
-    response.push_bulk(Bytes::from_static(b"subscribe"));
-    response.push_bulk(Bytes::from(channel_name));
-    response.push_int(num_subs as u64);
-    response
+    response.push_bulk(Bytes::from_static(b"subscribe"))?;
+    response.push_bulk(Bytes::from(channel_name))?;
+    response.push_int(num_subs as u64)?;
+    Ok(response)
 }
 
 /// Creates a message informing the client about a new message on a channel that
 /// the client subscribes to.
-fn make_message_frame(channel_name: String, msg: Bytes) -> Frame {
+fn make_message_frame(channel_name: String, msg: Bytes) -> Result<Frame, MiniRedisParseError> {
     let mut response = Frame::array();
-    response.push_bulk(Bytes::from_static(b"message"));
-    response.push_bulk(Bytes::from(channel_name));
-    response.push_bulk(msg);
-    response
+    response.push_bulk(Bytes::from_static(b"message"))?;
+    response.push_bulk(Bytes::from(channel_name))?;
+    response.push_bulk(msg)?;
+    Ok(response)
 }
 
 /// Handle a command received while inside `Subscribe::apply`. Only subscribe
@@ -269,7 +272,7 @@ async fn handle_command(
                 debug!("begin unsubscribed: {}", channel_name);
                 subscriptions.remove(&channel_name);
 
-                let response = make_unsubscribe_frame(channel_name, subscriptions.len());
+                let response = make_unsubscribe_frame(channel_name, subscriptions.len())?;
                 dst.write_frame(&response).await?;
                 debug!("unsubscribed success: {}", response);
             }

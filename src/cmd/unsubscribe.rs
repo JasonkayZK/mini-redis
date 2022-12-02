@@ -69,23 +69,26 @@ impl Unsubscribe {
     ///
     /// This is called by the client when encoding an `Unsubscribe` command to
     /// send to the server.
-    pub(crate) fn into_frame(self) -> Frame {
+    pub(crate) fn into_frame(self) -> Result<Frame, MiniRedisParseError> {
         let mut frame = Frame::array();
-        frame.push_bulk(Bytes::from("unsubscribe".as_bytes()));
+        frame.push_bulk(Bytes::from("unsubscribe".as_bytes()))?;
 
         for channel in self.channels {
-            frame.push_bulk(Bytes::from(channel.into_bytes()));
+            frame.push_bulk(Bytes::from(channel.into_bytes()))?;
         }
 
-        frame
+        Ok(frame)
     }
 }
 
 /// Creates the response to an unsubscribe request.
-pub(crate) fn make_unsubscribe_frame(channel_name: String, num_subs: usize) -> Frame {
+pub(crate) fn make_unsubscribe_frame(
+    channel_name: String,
+    num_subs: usize,
+) -> Result<Frame, MiniRedisParseError> {
     let mut response = Frame::array();
-    response.push_bulk(Bytes::from_static(b"unsubscribe"));
-    response.push_bulk(Bytes::from(channel_name));
-    response.push_int(num_subs as u64);
-    response
+    response.push_bulk(Bytes::from_static(b"unsubscribe"))?;
+    response.push_bulk(Bytes::from(channel_name))?;
+    response.push_int(num_subs as u64)?;
+    Ok(response)
 }
