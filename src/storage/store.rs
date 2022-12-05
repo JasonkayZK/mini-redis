@@ -1,4 +1,4 @@
-///! Core storage implementation for mini-redis
+//! Core storage implementation for mini-redis
 use std::collections::{BTreeMap, HashMap};
 
 use bytes::Bytes;
