@@ -5,12 +5,10 @@
 
 use std::future::Future;
 use std::sync::Arc;
-use std::time::Duration;
 
-use log::{error, info};
+use log::{debug, error, info};
 use tokio::net::TcpListener;
 use tokio::sync::{broadcast, mpsc, Semaphore};
-use tokio::time;
 
 use crate::consts::MAX_CONNECTIONS;
 use crate::server::listener::Listener;
@@ -83,10 +81,8 @@ pub async fn run(listener: TcpListener, shutdown: impl Future) {
             }
         }
         _ = shutdown => {
-            // The shutdown signal has been received,
-            // sleep for some time and shutdown gracefully
-            time::sleep(Duration::from_secs(2)).await;
-            info!("server is shutting down");
+            // The shutdown signal has been received
+            debug!("server is about to shutdown");
         }
     }
 
