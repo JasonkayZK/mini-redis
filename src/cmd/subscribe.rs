@@ -180,19 +180,19 @@ impl Subscribe {
 
         // Subscribe to the channel.
         let rx = Box::pin(async_stream::stream! {
-        loop {
-            match rx.recv().await {
-                Ok(msg) => yield msg,
-                // If we lagged in consuming messages, just resume.
-                Err(tokio::sync::broadcast::error::RecvError::Lagged(e)) => {
-                    warn!("subscribe received lagged: {}", e);
+            loop {
+                match rx.recv().await {
+                    Ok(msg) => yield msg,
+                    // If we lagged in consuming messages, just resume.
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(e)) => {
+                        warn!("subscribe received lagged: {}", e);
+                    }
+                    Err(e) => {
+                        warn!("subscribe received error: {}", e);
+                        break
+                    },
                 }
-                Err(e) => {
-                    warn!("subscribe received error: {}", e);
-                    break
-                },
             }
-        }
         });
 
         // Track subscription in this client's subscription set.
